@@ -50,6 +50,25 @@ def main():
 	parser.add_argument("--patchwise_morph", action="store_true", help="Interpolate patches of latent instead of full image")
 	parser.add_argument("--patch_grid", type=int, default=4, help="Number of patches per side for patchwise morph")
 	parser.add_argument("--patch_ratio", type=float, default=0.3, help="Fraction of patches to morph per frame")
+	parser.add_argument("--patch_shuffle_mode", type=str, default="none",
+	choices=["none", "per_transition", "per_frame"],
+	help="Shuffle patch order randomly to create glitchy motion")
+	parser.add_argument("--patch_motion", type=str, default="none",
+	choices=["none", "drift"],
+	help="Apply motion to patches during morph (e.g. drifting motion trails)")
+	parser.add_argument("--patch_strength_mode", type=str, default="uniform",
+	choices=["uniform", "radial", "random", "stripe"],
+	help="How to vary morph strength across patches")
+	parser.add_argument("--patch_mask_animated", action="store_true",
+		help="Animate patch mask over time for smooth evolving regions")
+	
+	parser.add_argument("--patch_mask_speed", type=float, default=0.5,
+		help="Speed of animated patch mask")
+	
+	parser.add_argument("--patch_mask_threshold", type=float, default=0.4,
+		help="Threshold for activating a patch in animated mask (0–1)")
+
+
 	# Parse args
 	args = parser.parse_args()
 	args_dict = vars(args)

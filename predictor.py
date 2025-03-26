@@ -75,7 +75,10 @@ class Predictor:
 			kwargs.get("quiet", False),
 			patchwise=kwargs.get("patchwise_morph", False),
 			patch_grid=kwargs.get("patch_grid", 4),
-			patch_ratio=kwargs.get("patch_ratio", 0.3)
+			patch_ratio=kwargs.get("patch_ratio", 0.3),
+			patch_shuffle_mode=kwargs.get("patch_shuffle_mode", "none"),
+			patch_strength_mode=kwargs.get("patch_strength_mode", "uniform")
+
 		)
 		
 		images = [decode_latent(self.pipe, latent, show=kwargs.get("show_preview")) for latent in frames]
@@ -131,7 +134,13 @@ class Predictor:
 				quiet=kwargs.get("quiet", False),
 				patchwise=kwargs.get("patchwise_morph", False),
 				patch_grid=kwargs.get("patch_grid", 4),
-				patch_ratio=kwargs.get("patch_ratio", 0.3)
+				patch_ratio=kwargs.get("patch_ratio", 0.3),
+				patch_shuffle_mode=kwargs.get("patch_shuffle_mode", "none"),
+				patch_strength_mode=kwargs.get("patch_strength_mode", "uniform"),
+				patch_mask_animated=kwargs.get("patch_mask_animated", False),
+				patch_mask_speed=kwargs.get("patch_mask_speed", 0.5),
+				patch_mask_threshold=kwargs.get("patch_mask_threshold", 0.4)
+
 			)
 		
 			for frame in frames:

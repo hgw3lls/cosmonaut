@@ -47,7 +47,9 @@ def main():
 	parser.add_argument("--use_replicate", action="store_true")
 	parser.add_argument("--replicate_model", type=str, default="tstramer/material-diffusion:a42692c54c0f407f803a0a8a9066160976baedb77c91171a01730f9b0d7beeff")
 	parser.add_argument("--replicate_token", type=str, default="")
-
+	parser.add_argument("--patchwise_morph", action="store_true", help="Interpolate patches of latent instead of full image")
+	parser.add_argument("--patch_grid", type=int, default=4, help="Number of patches per side for patchwise morph")
+	parser.add_argument("--patch_ratio", type=float, default=0.3, help="Fraction of patches to morph per frame")
 	# Parse args
 	args = parser.parse_args()
 	args_dict = vars(args)

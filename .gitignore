@@ -1,0 +1,29 @@
+# Bytecode
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual env
+venv/
+.env
+.env.*
+
+# Caches
+diffusers-cache/
+*.npy
+*.npz
+
+# Logs and output
+*.log
+*.mp4
+*.avi
+*.png
+*.jpg
+frames/
+outputs/
+prompt_log.txt
+
+# OS and editor junk
+.DS_Store
+.idea/
+.vscode/

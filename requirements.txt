@@ -1,0 +1,21 @@
+# Core
+torch
+diffusers
+transformers
+numpy
+Pillow
+tqdm
+opencv-python
+
+# API clients
+openai
+replicate
+requests
+python-dotenv
+
+# Optional (GUI preview)
+tk
+
+# For video encoding
+imageio
+imageio-ffmpeg

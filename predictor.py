@@ -77,7 +77,9 @@ class Predictor:
 			patch_grid=kwargs.get("patch_grid", 4),
 			patch_ratio=kwargs.get("patch_ratio", 0.3),
 			patch_shuffle_mode=kwargs.get("patch_shuffle_mode", "none"),
-			patch_strength_mode=kwargs.get("patch_strength_mode", "uniform")
+			patch_strength_mode=kwargs.get("patch_strength_mode", "uniform"),
+			patch_mask_type=kwargs.get("patch_mask_type", "sin"),
+			patch_mask_image=kwargs.get("patch_mask_image", "")
 
 		)
 		

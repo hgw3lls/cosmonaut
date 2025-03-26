@@ -67,7 +67,18 @@ def main():
 	
 	parser.add_argument("--patch_mask_threshold", type=float, default=0.4,
 		help="Threshold for activating a patch in animated mask (0–1)")
-
+	parser.add_argument("--patch_mask_type", type=str, default="sin",
+		choices=["sin", "stripe", "radial", "perlin", "image"],
+		help="Pattern for animated patch mask")
+	
+	parser.add_argument("--patch_mask_image", type=str, default="",
+		help="Path to mask image file if using --patch_mask_type image")
+	parser.add_argument("--patch_mask_blend", type=str, default="", 
+		help="Blend two mask types, e.g. 'radial,perlin' or 'stripe,sin'")
+	
+	parser.add_argument("--patch_mask_blend_mode", type=str, default="multiply",
+		choices=["multiply", "add", "min", "max"],
+		help="How to blend dual masks if --patch_mask_blend is set")
 
 	# Parse args
 	args = parser.parse_args()

@@ -19,3 +19,5 @@ tk
 # For video encoding
 imageio
 imageio-ffmpeg
+
+perlin-noise

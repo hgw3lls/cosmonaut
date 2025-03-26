@@ -2,7 +2,18 @@ import numpy as np
 from tqdm import tqdm
 from utils import slerp
 
-def interpolate_latents(latents, steps, looping, circular, tile_rows, tile_cols, quiet, patchwise=False):
+def interpolate_latents(
+	latents,
+	steps,
+	looping,
+	circular,
+	tile_rows,
+	tile_cols,
+	quiet,
+	patchwise=False,
+	patch_grid=4,
+	patch_ratio=0.3,
+):
 	frames = []
 	if circular and len(latents) >= 2:
 		A, B = latents[0], latents[1]

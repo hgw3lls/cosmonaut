@@ -1,87 +1,176 @@
 import os
-import time
-import threading
-import argparse
-from PIL import Image, ImageTk
 import tkinter as tk
+from PIL import Image, ImageTk
+import argparse
 
-class LivePreviewApp:
-	def __init__(self, folder, fps=24):
+class InfiniteTileApp:
+	def __init__(self, folder, fps=24, prompt="N/A", tile=True, grid_rows=2, grid_cols=2):
 		self.folder = folder
+		self.fps = fps
 		self.delay = int(1000 / fps)
-		self.frame_paths = []
-		self.seen = set()
-		self.current_index = 0
-		self.running = True
-		self.paused = False
+		self.prompt = prompt
+		self.tile = tile
+		self.grid_rows = grid_rows
+		self.grid_cols = grid_cols
+		self.hud_visible = False
+		self.paused = False  # starts playing
+		self.index = 0
+
+		# Build a sorted list of PNG images.
+		self.images = sorted(
+			[os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith('.png')]
+		)
+		if not self.images:
+			print("No PNG images found in the specified folder.")
+			exit(1)
 
 		self.root = tk.Tk()
-		self.root.title("🌀 Cosmist Live Preview")
+		self.root.title("Infinite Tile Preview")
+		# Load first image to set window size.
+		first_img = Image.open(self.images[0])
+		self.root.geometry(f"{first_img.width}x{first_img.height}")
+
 		self.label = tk.Label(self.root)
-		self.label.pack()
+		self.label.pack(expand=True, fill="both")
 
-		self.root.bind("<space>", self.toggle_pause)
-		self.root.bind("+", self.increase_fps)
-		self.root.bind("-", self.decrease_fps)
-		self.root.bind("q", self.quit_app)
+		# HUD label (initially hidden)
+		self.hud_label = tk.Label(self.root, bg="black", fg="white", font=("Helvetica", 12), justify="left")
+		self.hud_label.place_forget()
 
-		threading.Thread(target=self.refresh_loop, daemon=True).start()
-		self.root.after(self.delay, self.update_frame)
+		# Bind keys:
+		self.root.bind("h", self.toggle_hud)        # Toggle HUD.
+		self.root.bind("<space>", self.toggle_pause) # Pause/resume.
+		self.root.bind("t", self.toggle_tiling)       # Toggle tiling mode.
+		self.root.bind("<Up>", self.increase_grid_rows)    # Increase grid rows.
+		self.root.bind("<Down>", self.decrease_grid_rows)  # Decrease grid rows.
+		self.root.bind("<Right>", self.increase_grid_cols)  # Increase grid columns.
+		self.root.bind("<Left>", self.decrease_grid_cols)   # Decrease grid columns.
+		self.root.bind("+", self.increase_fps)         # Increase FPS.
+		self.root.bind("-", self.decrease_fps)         # Decrease FPS.
+
+		self.update_image()
 		self.root.mainloop()
 
-	def refresh_loop(self):
-		while self.running:
-			all_pngs = sorted([
-				os.path.join(self.folder, f) for f in os.listdir(self.folder)
-				if f.endswith(".png")
-			])
-			new = [f for f in all_pngs if f not in self.seen]
-			self.frame_paths.extend(new)
-			self.seen.update(new)
-			time.sleep(1)
-
-	def update_frame(self):
-		if self.running and not self.paused and self.frame_paths:
-			frame_path = self.frame_paths[self.current_index % len(self.frame_paths)]
+	def update_image(self):
+		if not self.paused:
+			current_path = self.images[self.index]
 			try:
-				img = Image.open(frame_path)
-				img = self.scale_image(img)
-				tk_img = ImageTk.PhotoImage(img)
-				self.label.configure(image=tk_img)
-				self.label.image = tk_img
+				img = Image.open(current_path)
 			except Exception as e:
-				print(f"⚠️ Failed to load image: {e}")
-			self.current_index += 1
-		self.root.after(self.delay, self.update_frame)
+				print("Error opening image:", e)
+				self.index = (self.index + 1) % len(self.images)
+				self.root.after(self.delay, self.update_image)
+				return
 
-	def scale_image(self, img):
-		screen_w = self.root.winfo_screenwidth()
-		screen_h = self.root.winfo_screenheight()
-		img.thumbnail((screen_w - 100, screen_h - 100), Image.ANTIALIAS)
-		return img
+			# Get current window size.
+			win_w = max(1, self.root.winfo_width())
+			win_h = max(1, self.root.winfo_height())
+			
+			if self.tile:
+				# Calculate cell size exactly.
+				cell_w = win_w // self.grid_cols
+				cell_h = win_h // self.grid_rows
+				# Force resize to fill the cell exactly.
+				img_cell = img.resize((cell_w, cell_h), Image.ANTIALIAS)
+				# Create composite image with no gaps.
+				composite = Image.new("RGB", (cell_w * self.grid_cols, cell_h * self.grid_rows))
+				for r in range(self.grid_rows):
+					for c in range(self.grid_cols):
+						composite.paste(img_cell, (c * cell_w, r * cell_h))
+				final_img = composite
+			else:
+				# If not tiling, scale image to fit within window (with margin).
+				margin = 100
+				target_w = max(1, win_w - margin)
+				target_h = max(1, win_h - margin)
+				img.thumbnail((target_w, target_h), Image.ANTIALIAS)
+				final_img = img
+
+			tk_img = ImageTk.PhotoImage(final_img)
+			self.label.config(image=tk_img)
+			self.label.image = tk_img  # Prevent garbage collection.
+			self.index = (self.index + 1) % len(self.images)
+
+		# Update HUD if visible.
+		if self.hud_visible:
+			state = "Paused" if self.paused else "Playing"
+			current_image = self.images[self.index - 1] if self.index > 0 else self.images[0]
+			hud_text = (
+				f"State: {state}\n"
+				f"FPS: {self.fps}\n"
+				f"Image: {os.path.basename(current_image)}\n"
+				f"Prompt: {self.prompt}\n"
+				f"Tiling: {'On' if self.tile else 'Off'}\n"
+				f"Grid: {self.grid_rows} x {self.grid_cols}"
+			)
+			self.hud_label.config(text=hud_text)
+			self.hud_label.lift()
+
+		self.root.after(self.delay, self.update_image)
 
 	def toggle_pause(self, event=None):
 		self.paused = not self.paused
-		print("⏸️ Paused" if self.paused else "▶️ Resumed")
+		print("Paused" if self.paused else "Playing")
+
+	def toggle_tiling(self, event=None):
+		self.tile = not self.tile
+		print("Tiling toggled", "On" if self.tile else "Off")
+
+	def increase_grid_rows(self, event=None):
+		self.grid_rows += 1
+		print("Grid rows increased to", self.grid_rows)
+
+	def decrease_grid_rows(self, event=None):
+		if self.grid_rows > 1:
+			self.grid_rows -= 1
+			print("Grid rows decreased to", self.grid_rows)
+		else:
+			print("Grid rows already at minimum (1)")
+
+	def increase_grid_cols(self, event=None):
+		self.grid_cols += 1
+		print("Grid columns increased to", self.grid_cols)
+
+	def decrease_grid_cols(self, event=None):
+		if self.grid_cols > 1:
+			self.grid_cols -= 1
+			print("Grid columns decreased to", self.grid_cols)
+		else:
+			print("Grid columns already at minimum (1)")
+
+	def toggle_hud(self, event=None):
+		self.hud_visible = not self.hud_visible
+		if self.hud_visible:
+			self.hud_label.place(x=10, y=10)
+		else:
+			self.hud_label.place_forget()
 
 	def increase_fps(self, event=None):
-		self.delay = max(10, self.delay - 10)
-		print(f"⚡ Increased FPS: {1000 // self.delay}")
+		self.fps += 1
+		self.delay = int(1000 / self.fps)
+		print("FPS increased to", self.fps)
 
 	def decrease_fps(self, event=None):
-		self.delay = min(1000, self.delay + 10)
-		print(f"🐢 Decreased FPS: {1000 // self.delay}")
-
-	def quit_app(self, event=None):
-		print("👋 Exiting preview.")
-		self.running = False
-		self.root.destroy()
-
+		if self.fps > 1:
+			self.fps -= 1
+			self.delay = int(1000 / self.fps)
+			print("FPS decreased to", self.fps)
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description="🎞️ Cosmist Real-Time Preview GUI")
-	parser.add_argument("--folder", type=str, required=True, help="Folder with .png frames")
-	parser.add_argument("--fps", type=int, default=24, help="Initial frames per second")
+	parser = argparse.ArgumentParser(description="Infinite scaling tile preview with adjustable grid.")
+	parser.add_argument("--folder", required=True, help="Folder with PNG images")
+	parser.add_argument("--fps", type=int, default=24, help="Frames per second")
+	parser.add_argument("--prompt", type=str, default="N/A", help="Prompt text for HUD")
+	parser.add_argument("--tile", action="store_true", help="Start in tiling mode")
+	parser.add_argument("--grid_rows", type=int, default=2, help="Initial number of grid rows")
+	parser.add_argument("--grid_cols", type=int, default=2, help="Initial number of grid columns")
 	args = parser.parse_args()
 
-	LivePreviewApp(args.folder, fps=args.fps)
+	InfiniteTileApp(
+		folder=args.folder,
+		fps=args.fps,
+		prompt=args.prompt,
+		tile=args.tile,
+		grid_rows=args.grid_rows,
+		grid_cols=args.grid_cols
+	)

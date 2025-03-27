@@ -79,6 +79,8 @@ def main():
 	parser.add_argument("--patch_mask_blend_mode", type=str, default="multiply",
 		choices=["multiply", "add", "min", "max"],
 		help="How to blend dual masks if --patch_mask_blend is set")
+	parser.add_argument("--resume", action="store_true", help="Resume infinite generation from last frame")
+
 
 	# Parse args
 	args = parser.parse_args()
